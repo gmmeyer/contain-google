@@ -5,7 +5,8 @@ const GOOGLE_CONTAINER_ICON = "fingerprint";
 const GOOGLE_DOMAINS = [
   "google.com", "www.google.com", "goo.gl",
   "maps.google.com", "inbox.google.com", "drive.google.com", "docs.google.com",
-  "sheets.google.com", "images.google.com", "news.google.com"
+  "sheets.google.com", "images.google.com", "news.google.com",
+  "accounts.google.com",
 ];
 
 const MAC_ADDON_ID = "@testpilot-containers";
