@@ -1,23 +1,21 @@
 // Param values from https://developer.mozilla.org/Add-ons/WebExtensions/API/contextualIdentities/create
-const FACEBOOK_CONTAINER_NAME = "Facebook";
-const FACEBOOK_CONTAINER_COLOR = "blue";
-const FACEBOOK_CONTAINER_ICON = "briefcase";
-const FACEBOOK_DOMAINS = [
-  "facebook.com", "www.facebook.com", "fb.com", "fbcdn.net", "cdn.fbsbx.com",
-  "instagram.com", "www.instagram.com",
-  "messenger.com", "www.messenger.com",
-  "whatsapp.com", "www.whatsapp.com", "web.whatsapp.com", "cdn.whatsapp.net", "www-cdn.whatsapp.net",
-  "atdmt.com"
+const GOOGLE_CONTAINER_NAME = "Google";
+const GOOGLE_CONTAINER_COLOR = "green";
+const GOOGLE_CONTAINER_ICON = "fingerprint";
+const GOOGLE_DOMAINS = [
+  "google.com", "www.google.com", "goo.gl",
+  "maps.google.com", "inbox.google.com", "drive.google.com", "docs.google.com",
+  "sheets.google.com", "images.google.com", "news.google.com"
 ];
 
 const MAC_ADDON_ID = "@testpilot-containers";
 
 let macAddonEnabled = false;
-let facebookCookieStoreId = null;
+let googleCookieStoreId = null;
 
 const canceledRequests = {};
 const tabsWaitingToLoad = {};
-const facebookHostREs = [];
+const googleHostREs = [];
 
 async function isMACAddonEnabled () {
   try {
@@ -63,12 +61,12 @@ async function sendJailedDomainsToMAC () {
   try {
     return await browser.runtime.sendMessage(MAC_ADDON_ID, {
       method: "jailedDomains",
-      urls: FACEBOOK_DOMAINS.map((domain) => {
+      urls: GOOGLE_DOMAINS.map((domain) => {
         return `https://${domain}/`;
       })
     });
   } catch (e) {
-    // We likely might want to handle this case: https://github.com/mozilla/contain-facebook/issues/113#issuecomment-380444165
+    // We likely might want to handle this case: https://github.com/mozilla/contain-google/issues/113#issuecomment-380444165
     return false;
   }
 }
@@ -132,14 +130,14 @@ function shouldCancelEarly (tab, options) {
   return false;
 }
 
-function generateFacebookHostREs () {
-  for (let facebookDomain of FACEBOOK_DOMAINS) {
-    facebookHostREs.push(new RegExp(`^(.*\\.)?${facebookDomain}$`));
+function generateGoogleHostREs () {
+  for (let googleDomain of GOOGLE_DOMAINS) {
+    googleHostREs.push(new RegExp(`^(.*\\.)?${googleDomain}$`));
   }
 }
 
-async function clearFacebookCookies () {
-  // Clear all facebook cookies
+async function clearGoogleCookies () {
+  // Clear all google cookies
   const containers = await browser.contextualIdentities.query({});
   containers.push({
     cookieStoreId: "firefox-default"
@@ -147,60 +145,60 @@ async function clearFacebookCookies () {
 
   let macAssignments = [];
   if (macAddonEnabled) {
-    const promises = FACEBOOK_DOMAINS.map(async facebookDomain => {
-      const assigned = await getMACAssignment(`https://${facebookDomain}/`);
-      return assigned ? facebookDomain : null;
+    const promises = GOOGLE_DOMAINS.map(async googleDomain => {
+      const assigned = await getMACAssignment(`https://${googleDomain}/`);
+      return assigned ? googleDomain : null;
     });
     macAssignments = await Promise.all(promises);
   }
 
-  FACEBOOK_DOMAINS.map(async facebookDomain => {
-    const facebookCookieUrl = `https://${facebookDomain}/`;
+  GOOGLE_DOMAINS.map(async googleDomain => {
+    const googleCookieUrl = `https://${googleDomain}/`;
 
-    // dont clear cookies for facebookDomain if mac assigned (with or without www.)
+    // dont clear cookies for googleDomain if mac assigned (with or without www.)
     if (macAddonEnabled &&
-        (macAssignments.includes(facebookDomain) ||
-         macAssignments.includes(`www.${facebookDomain}`))) {
+        (macAssignments.includes(googleDomain) ||
+         macAssignments.includes(`www.${googleDomain}`))) {
       return;
     }
 
     containers.map(async container => {
       const storeId = container.cookieStoreId;
-      if (storeId === facebookCookieStoreId) {
-        // Don't clear cookies in the Facebook Container
+      if (storeId === googleCookieStoreId) {
+        // Don't clear cookies in the Google Container
         return;
       }
 
       const cookies = await browser.cookies.getAll({
-        domain: facebookDomain,
+        domain: googleDomain,
         storeId
       });
 
       cookies.map(cookie => {
         browser.cookies.remove({
           name: cookie.name,
-          url: facebookCookieUrl,
+          url: googleCookieUrl,
           storeId
         });
       });
       // Also clear Service Workers as it breaks detecting onBeforeRequest
-      await browser.browsingData.remove({hostnames: [facebookDomain]}, {serviceWorkers: true});
+      await browser.browsingData.remove({hostnames: [googleDomain]}, {serviceWorkers: true});
     });
   });
 }
 
 async function setupContainer () {
-  // Use existing Facebook container, or create one
-  const contexts = await browser.contextualIdentities.query({name: FACEBOOK_CONTAINER_NAME});
+  // Use existing Google container, or create one
+  const contexts = await browser.contextualIdentities.query({name: GOOGLE_CONTAINER_NAME});
   if (contexts.length > 0) {
-    facebookCookieStoreId = contexts[0].cookieStoreId;
+    googleCookieStoreId = contexts[0].cookieStoreId;
   } else {
     const context = await browser.contextualIdentities.create({
-      name: FACEBOOK_CONTAINER_NAME,
-      color: FACEBOOK_CONTAINER_COLOR,
-      icon: FACEBOOK_CONTAINER_ICON
+      name: GOOGLE_CONTAINER_NAME,
+      color: GOOGLE_CONTAINER_COLOR,
+      icon: GOOGLE_CONTAINER_ICON
     });
-    facebookCookieStoreId = context.cookieStoreId;
+    googleCookieStoreId = context.cookieStoreId;
   }
 }
 
@@ -215,10 +213,10 @@ function reopenTab ({url, tab, cookieStoreId}) {
   browser.tabs.remove(tab.id);
 }
 
-function isFacebookURL (url) {
+function isGoogleURL (url) {
   const parsedUrl = new URL(url);
-  for (let facebookHostRE of facebookHostREs) {
-    if (facebookHostRE.test(parsedUrl.host)) {
+  for (let googleHostRE of googleHostREs) {
+    if (googleHostRE.test(parsedUrl.host)) {
       return true;
     }
   }
@@ -231,14 +229,14 @@ function shouldContainInto (url, tab) {
     return false;
   }
 
-  if (isFacebookURL(url)) {
-    if (tab.cookieStoreId !== facebookCookieStoreId) {
-      // Facebook-URL outside of Facebook Container Tab
-      // Should contain into Facebook Container
-      return facebookCookieStoreId;
+  if (isGoogleURL(url)) {
+    if (tab.cookieStoreId !== googleCookieStoreId) {
+      // Google-URL outside of Google Container Tab
+      // Should contain into Google Container
+      return googleCookieStoreId;
     }
-  } else if (tab.cookieStoreId === facebookCookieStoreId) {
-    // Non-Facebook-URL inside Facebook Container Tab
+  } else if (tab.cookieStoreId === googleCookieStoreId) {
+    // Non-Google-URL inside Google Container Tab
     // Should contain into Default Container
     return "firefox-default";
   }
@@ -308,8 +306,8 @@ async function maybeReopenAlreadyOpenTabs () {
   });
 }
 
-async function containFacebook (options) {
-  // Listen to requests and open Facebook into its Container,
+async function containGoogle (options) {
+  // Listen to requests and open Google into its Container,
   // open other sites into the default tab context
   if (options.tabId === -1) {
     // Request doesn't belong to a tab
@@ -361,14 +359,14 @@ async function containFacebook (options) {
     await setupContainer();
   } catch (error) {
     // TODO: Needs backup strategy
-    // See https://github.com/mozilla/contain-facebook/issues/23
-    // Sometimes this add-on is installed but doesn't get a facebookCookieStoreId ?
+    // See https://github.com/mozilla/contain-google/issues/23
+    // Sometimes this add-on is installed but doesn't get a googleCookieStoreId ?
     // eslint-disable-next-line no-console
     console.log(error);
     return;
   }
-  clearFacebookCookies();
-  generateFacebookHostREs();
+  clearGoogleCookies();
+  generateGoogleHostREs();
 
   // Clean up canceled requests
   browser.webRequest.onCompleted.addListener((options) => {
@@ -383,7 +381,7 @@ async function containFacebook (options) {
   },{urls: ["<all_urls>"], types: ["main_frame"]});
 
   // Add the request listener
-  browser.webRequest.onBeforeRequest.addListener(containFacebook, {urls: ["<all_urls>"], types: ["main_frame"]}, ["blocking"]);
+  browser.webRequest.onBeforeRequest.addListener(containGoogle, {urls: ["<all_urls>"], types: ["main_frame"]}, ["blocking"]);
 
   maybeReopenAlreadyOpenTabs();
 })();

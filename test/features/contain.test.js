@@ -1,26 +1,26 @@
 describe("Contain", () => {
-  let webExtension, background, facebookContainer;
+  let webExtension, background, googleContainer;
 
   beforeEach(async () => {
     webExtension = await loadWebExtension();
     background = webExtension.background;
-    facebookContainer = webExtension.facebookContainer;
+    googleContainer = webExtension.googleContainer;
   });
 
-  describe("Incoming requests to Facebook Domains outside of Facebook Container", () => {
+  describe("Incoming requests to Google Domains outside of Google Container", () => {
     const responses = {};
     beforeEach(async () => {
       await background.browser.tabs._create({
-        url: "https://www.facebook.com"
+        url: "https://www.google.com"
       }, {
         responses
       });
     });
 
-    it("should be reopened in Facebook Container", async () => {
+    it("should be reopened in Google Container", async () => {
       expect(background.browser.tabs.create).to.have.been.calledWithMatch({
-        url: "https://www.facebook.com",
-        cookieStoreId: facebookContainer.cookieStoreId
+        url: "https://www.google.com",
+        cookieStoreId: googleContainer.cookieStoreId
       });
     });
 
@@ -31,12 +31,12 @@ describe("Contain", () => {
     });
   });
 
-  describe("Incoming requests to Non-Facebook Domains inside Facebook Container", () => {
+  describe("Incoming requests to Non-Google Domains inside Google Container", () => {
     const responses = {};
     beforeEach(async () => {
       await background.browser.tabs._create({
         url: "https://example.com",
-        cookieStoreId: facebookContainer.cookieStoreId
+        cookieStoreId: googleContainer.cookieStoreId
       }, {
         responses
       });
@@ -61,7 +61,7 @@ describe("Contain", () => {
     const responses = {};
     beforeEach(async () => {
       await background.browser.tabs._create({
-        url: "ftp://www.facebook.com"
+        url: "ftp://www.google.com"
       }, {
         responses
       });
@@ -79,7 +79,7 @@ describe("Contain", () => {
     const responses = {};
     beforeEach(async () => {
       await background.browser.tabs._create({
-        url: "https://www.facebook.com",
+        url: "https://www.google.com",
         incognito: true
       }, {
         responses
@@ -99,7 +99,7 @@ describe("Contain", () => {
     const responses = {};
     beforeEach(async () => {
       await background.browser.tabs._create({
-        url: "https://www.facebook.com",
+        url: "https://www.google.com",
         id: -1
       }, {
         responses

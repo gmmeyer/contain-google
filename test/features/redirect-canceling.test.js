@@ -10,10 +10,10 @@ describe("Redirect Canceling", () => {
     it("should not open two tabs", async () => {
       const responses = {};
       await background.browser.tabs._create({
-        url: "http://facebook.com"
+        url: "http://google.com"
       }, {
         options: {
-          webRequestRedirects: ["https://www.facebook.com"]
+          webRequestRedirects: ["https://www.google.com"]
         },
         responses
       });
@@ -35,14 +35,14 @@ describe("Redirect Canceling", () => {
     const responses = {};
     const redirectedRequest = async (options = {}) => {
       tab = await background.browser.tabs._create({
-        url: "http://facebook.com"
+        url: "http://google.com"
       }, {
         options: Object.assign({
           webRequestRedirects: [
-            "https://facebook.com",
-            "https://www.facebook.com",
+            "https://google.com",
+            "https://www.google.com",
             {
-              url: "https://www.facebook.com",
+              url: "https://www.google.com",
               webRequest: {
                 requestId: 2
               }
@@ -80,7 +80,7 @@ describe("Redirect Canceling", () => {
       // we create a tab with the same id and use the same request id to see if uncanceled
       await background.browser.tabs._create({
         id: tab.id,
-        url: "https://www.facebook.com/foo"
+        url: "https://www.google.com/foo"
       }, {
         options: {
           webRequest: {
@@ -99,7 +99,7 @@ describe("Redirect Canceling", () => {
       // we create a tab with the same id and use the same request id to see if uncanceled
       await background.browser.tabs._create({
         id: tab.id,
-        url: "https://www.facebook.com/foo"
+        url: "https://www.google.com/foo"
       }, {
         options: {
           webRequest: {
@@ -120,7 +120,7 @@ describe("Redirect Canceling", () => {
       // we create a tab with the same id and use the same request id to see if uncanceled
       await background.browser.tabs._create({
         id: tab.id,
-        url: "https://www.facebook.com/foo"
+        url: "https://www.google.com/foo"
       }, {
         options: {
           webRequest: {

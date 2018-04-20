@@ -25,7 +25,7 @@ global.loadWebExtension = async (options = {}) => {
   });
   webExtension.background.browser.runtime.sendMessage.resetHistory();
   if (webExtension.background.browser.contextualIdentities.create.firstCall) {
-    webExtension.facebookContainer =
+    webExtension.googleContainer =
       await webExtension.background.browser.contextualIdentities.create.firstCall.returnValue;
   }
   global.webExtension = webExtension;
